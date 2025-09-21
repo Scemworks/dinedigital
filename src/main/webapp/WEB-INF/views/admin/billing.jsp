@@ -71,6 +71,9 @@
         </c:forEach>
         </tbody>
         <tfoot>
+          <c:if test="${not empty order.reservation_id}">
+            <tr><th colspan="3" class="text-end">Reservation Fee</th><th class="text-end">₹ 50.00</th></tr>
+          </c:if>
           <tr><th colspan="3" class="text-end">Total</th><th class="text-end">${total}</th></tr>
         </tfoot>
       </table>
