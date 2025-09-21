@@ -1,0 +1,50 @@
+# Maven
+/target/
+!target/classes/
+
+# IntelliJ
+.idea/
+*.iml
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+app.log
+
+# PDFs and exports
+*.pdf
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# H2 database files
+*.mv.db
+*.trace.db
+
+# WAR built
+*.war
+
+# IDE specific
+.classpath
+.project
+.settings/
+
+# Node / others
+node_modules/
+
+# coverage
+coverage/
+
+# environment
+.env
+
+# compiled classes
+*.class
