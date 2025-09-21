@@ -1,0 +1,366 @@
+/* DineDigital global theme: readable, high-contrast, responsive */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&family=Playfair+Display:wght@700&display=swap');
+
+/* --- CSS Variables for Easy Theme Management --- */
+:root {
+	--primary-font: 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif;
+	--heading-font: 'Playfair Display', serif;
+	--background-color: #121212;
+	--text-color: #ffffff; /* Keeping text pure white per request */
+	--muted-text: #ffffff; /* Force muted to white for readability */
+	--primary-accent: #D4AF37; /* A warm, elegant gold */
+	--primary-accent-600: #b38f29;
+	--primary-accent-700: #a98427;
+	--card-background: #1a1a1a;
+	--border-color: #333;
+	--focus: #3b82f6;
+}
+
+/* --- Base & Body Styling --- */
+html{scroll-behavior:smooth}
+body {
+	font-family: var(--primary-font);
+	background-color: var(--background-color);
+	color: var(--text-color);
+	margin: 0;
+	padding: 0;
+	font-weight: 300;
+	line-height: 1.7;
+	font-size: clamp(15px, 1.1vw + 12px, 18px);
+}
+
+/* --- Helper Classes for Layout --- */
+.page-wrapper {
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
+}
+.content-wrap {
+	flex: 1;
+}
+.content-section {
+	padding-top: 100px;
+	padding-bottom: 60px;
+}
+
+/* --- Typography --- */
+h1, h2, h3, h4, h5, h6 {
+	font-family: var(--heading-font);
+	font-weight: 700;
+	color: var(--text-color);
+	text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+	line-height: 1.2;
+}
+h1{font-size:clamp(1.8rem,2.5vw,2.6rem)}
+h2{font-size:clamp(1.5rem,2vw,2.2rem)}
+h3{font-size:clamp(1.25rem,1.6vw,1.6rem)}
+
+/* Ensure .fw-semibold is always white for readability */
+.fw-semibold { color: var(--text-color) !important; }
+
+/* --- Navigation Bar --- */
+.navbar {
+	transition: background-color 0.4s ease;
+	background-color: rgba(18, 18, 18, 0.8);
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+}
+
+.navbar-brand {
+	font-family: var(--heading-font);
+	font-size: 1.75rem;
+	color: var(--primary-accent) !important;
+}
+
+.nav-link {
+	color: var(--text-color) !important;
+	font-weight: 400;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+	margin: 0 10px;
+	position: relative;
+	transition: color 0.3s ease;
+}
+
+.nav-link::after {
+	content: '';
+	position: absolute;
+	bottom: -5px;
+	left: 0;
+	width: 100%;
+	height: 2px;
+	background-color: var(--primary-accent);
+	transform: scaleX(0);
+	transform-origin: bottom right;
+	transition: transform 0.3s ease-out;
+}
+
+.nav-link:hover, .nav-link.active {
+	color: var(--primary-accent) !important;
+}
+
+.nav-link:hover::after, .nav-link.active::after {
+	transform: scaleX(1);
+	transform-origin: bottom left;
+}
+
+.navbar-toggler{border-color:#444}
+.navbar-toggler:focus{box-shadow:0 0 0 .2rem rgba(212,175,55,.35)}
+@media (max-width: 767.98px){
+	.navbar .navbar-collapse{background-color:rgba(18,18,18,.95); padding:12px 0; border-top:1px solid var(--border-color)}
+	.navbar .navbar-nav .nav-link{padding:10px 0}
+}
+
+/* --- Hero Section (Homepage) --- */
+.hero {
+	background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80') no-repeat center center;
+	background-size: cover;
+	min-height: 90vh;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+	padding: 0 20px;
+}
+
+.hero h1 {
+	font-size: 4rem;
+	margin-bottom: 0.5rem;
+}
+
+.hero p {
+	font-size: 1.25rem;
+	font-weight: 300;
+	max-width: 600px;
+	color: var(--text-color); /* Ensuring white text */
+}
+
+/* --- Buttons --- */
+.btn {
+	padding: 12px 30px;
+	font-weight: 500;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+	border-radius: 2px;
+	transition: all 0.3s ease;
+	margin: 10px;
+}
+
+.btn:focus{outline:2px solid transparent;box-shadow:0 0 0 .25rem rgba(212,175,55,.35)}
+.btn-primary {
+	background-color: var(--primary-accent);
+	border-color: var(--primary-accent);
+	color: #ffffff; /* Ensuring white text for buttons */
+}
+
+.btn-primary:hover {
+	background-color: var(--primary-accent-600);
+	border-color: var(--primary-accent-600);
+	transform: translateY(-3px);
+	box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
+}
+
+.btn-outline-primary {
+	border: 2px solid var(--primary-accent);
+	color: var(--primary-accent);
+}
+
+.btn-outline-primary:hover {
+	background-color: var(--primary-accent);
+	color: #ffffff; /* Ensuring white text */
+	transform: translateY(-3px);
+}
+
+.btn-outline-secondary{border-color:#5b6573;color:#ffffff}
+.btn-outline-secondary:hover{background-color:#2a2f37;color:#fff;border-color:#6b7481}
+
+/* --- Menu & Content Cards --- */
+.card {
+	background-color: var(--card-background);
+	border: 1px solid var(--border-color);
+	border-radius: 4px;
+	overflow: hidden;
+	transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+	transform: translateY(-5px);
+	box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.card-img-top {
+	height: 220px;
+	object-fit: cover;
+}
+
+.card-title {
+	color: var(--primary-accent);
+}
+
+.card-text {
+	color: var(--text-color); /* Ensuring white text */
+}
+
+/* --- Forms (Reservations) --- */
+form {
+	background: var(--card-background);
+	padding: 40px;
+	border-radius: 4px;
+	border: 1px solid var(--border-color);
+	box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+}
+
+.form-label {
+	font-weight: 400;
+	color: var(--text-color); /* Ensuring white text */
+}
+
+.form-control {
+	background-color: #222;
+	border: 1px solid #444;
+	color: var(--text-color);
+	border-radius: 2px;
+	padding: 12px 15px;
+}
+
+.form-control::placeholder{color:rgba(255,255,255,.85)}
+.form-control:focus {
+	background-color: #222;
+	border-color: var(--primary-accent);
+	box-shadow: 0 0 0 0.25rem rgba(212, 175, 55, 0.25);
+	color: var(--text-color);
+}
+
+/* --- Tables --- */
+.table{color:var(--text-color)}
+.table thead, .table-dark{--bs-table-bg:#111; --bs-table-color:var(--text-color)}
+.table-striped>tbody>tr:nth-of-type(odd){--bs-table-accent-bg:rgba(255,255,255,.02)}
+.table th, .table td{vertical-align:middle}
+.table-responsive{overflow-x:auto}
+
+/* --- Links --- */
+a{color:var(--primary-accent)}
+a:hover{color:var(--primary-accent-700)}
+
+/* --- QR Code Section (Order Page) --- */
+#qr-reader {
+	border: 2px solid var(--primary-accent) !important;
+	background: #1a1a1a !important;
+	border-radius: 4px;
+}
+
+/* --- Pre-order UI --- */
+.preorder-toggle {
+	cursor: pointer;
+	padding: 1rem 0;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-bottom: 1px solid var(--border-color);
+	margin-bottom: 1rem;
+}
+.preorder-toggle h4 {
+	margin: 0;
+}
+.preorder-toggle .toggle-icon {
+	transition: transform 0.3s ease;
+}
+.preorder-toggle[aria-expanded="true"] .toggle-icon {
+	transform: rotate(180deg);
+}
+.quantity-selector {
+	gap: 0.5rem;
+}
+.quantity-selector .quantity-btn {
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	padding: 0;
+	font-size: 1.2rem;
+	line-height: 1;
+	border: 1px solid var(--border-color);
+	color: var(--text-color);
+	background-color: #222;
+	transition: background-color 0.2s, border-color 0.2s;
+}
+.quantity-selector .quantity-btn:hover {
+	background-color: var(--primary-accent);
+	border-color: var(--primary-accent);
+	color: #ffffff; /* Ensuring white text */
+}
+.quantity-display {
+	font-weight: 500;
+	font-size: 1.1rem;
+	min-width: 25px;
+	text-align: center;
+}
+.preorder-total {
+	border-top: 1px solid var(--border-color);
+	padding-top: 1rem;
+	margin-top: 1.5rem;
+}
+
+/* --- Footer --- */
+.footer {
+	background-color: #0a0a0a;
+	padding: 40px 0;
+	text-align: center;
+	border-top: 1px solid var(--border-color);
+}
+
+.footer p {
+	margin: 0;
+	color: var(--text-color); /* Ensuring white text */
+}
+
+.footer .social-links a {
+	color: var(--text-color); /* Ensuring white text */
+	margin: 0 15px;
+	font-size: 1.2rem;
+	transition: color 0.3s ease;
+}
+
+.footer .social-links a:hover {
+	color: var(--primary-accent);
+}
+
+/* Prevent any light/white backgrounds */
+.bg-white, .bg-light{background-color:var(--card-background) !important; color: var(--text-color) !important}
+.bg-body{background-color:var(--background-color) !important; color: var(--text-color) !important}
+
+/* Ensure Bootstrap's muted helpers are readable on dark bg */
+.text-muted{color:var(--text-color) !important}
+.form-text{color:var(--text-color) !important}
+/* Ensure other Bootstrap text helpers are white on dark */
+.text-secondary, .text-body, .text-dark, .text-black-50,
+.text-body-secondary, .text-body-tertiary, .text-body-emphasis,
+.text-black, .text-body-black { color: var(--text-color) !important }
+
+/* --- Responsive helpers --- */
+img { max-width: 100%; height: auto }
+@media (max-width: 575.98px){
+	.content-section{ padding-top: 80px; padding-bottom: 48px }
+	.btn{ padding: 10px 16px }
+	.table{ display: block; width: 100%; overflow-x: auto }
+}
+
+/* --- Confirmation/Billing helpers (5-star polish) --- */
+.code-card{display:inline-block; padding:1.25rem 1.5rem; border:1px solid var(--border-color); background:var(--card-background); border-radius:4px; box-shadow:0 8px 30px rgba(0,0,0,.3)}
+.code-card .code-value{font-family: var(--heading-font); font-size: clamp(1.8rem,2.4vw,2.6rem); letter-spacing:.12em; color: var(--primary-accent)}
+.accent-heading{color: var(--primary-accent)}
+
+/* --- Admin/Kitchen helpers --- */
+.badge-gold{background-color: var(--primary-accent); color:#111}
+.card-accent-top{position:relative}
+.card-accent-top::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary-accent),rgba(212,175,55,.2))}
+.admin-tile{transition:transform .25s ease, box-shadow .25s ease}
+.admin-tile:hover{transform:translateY(-4px);box-shadow:0 10px 20px rgba(0,0,0,.25)}
+.list-group-item{background:transparent;color:var(--text-color);border-color:var(--border-color)}
+.breadcrumb{--bs-breadcrumb-divider-color: var(--text-color); color: var(--text-color)}
+.breadcrumb-item+.breadcrumb-item::before{color: var(--text-color)}
+.breadcrumb .active{color: var(--primary-accent)}
+
+/* --- QR grid --- */
+.qr-grid{display:flex;flex-wrap:wrap;gap:16px}
+.qr-item{padding:12px;border:1px solid var(--border-color);border-radius:8px;text-align:center;background:var(--card-background)}

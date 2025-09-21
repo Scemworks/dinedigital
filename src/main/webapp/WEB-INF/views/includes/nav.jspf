@@ -1,0 +1,38 @@
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+<nav class="navbar navbar-expand-md navbar-dark fixed-top" role="navigation" aria-label="Main navigation">
+  <div class="container">
+  <a class="navbar-brand" href="<c:url value='/'/>">DineDigital</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link ${page eq 'menu' ? 'active' : ''}" href="<c:url value='/menu'/>" ${page eq 'menu' ? 'aria-current="page"' : ''}>Our Menu</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link ${page eq 'reservation' ? 'active' : ''}" href="<c:url value='/reservation'/>" ${page eq 'reservation' ? 'aria-current="page"' : ''}>Reservations</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link ${page eq 'order' ? 'active' : ''}" href="<c:url value='/order'/>" ${page eq 'order' ? 'aria-current="page"' : ''}>Order At Table</a>
+        </li>
+        <sec:authorize access="isAnonymous()">
+          <li class="nav-item"><a class="nav-link" href="<c:url value='/login?type=admin'/>">Admin</a></li>
+          <li class="nav-item"><a class="nav-link" href="<c:url value='/login?type=kitchen'/>">Kitchen</a></li>
+        </sec:authorize>
+        <sec:authorize access="hasRole('ADMIN')">
+          <li class="nav-item"><a class="nav-link" href="<c:url value='/admin'/>">Dashboard</a></li>
+        </sec:authorize>
+        <sec:authorize access="hasRole('KITCHEN')">
+          <li class="nav-item"><a class="nav-link" href="<c:url value='/kitchen'/>">Kitchen Board</a></li>
+          <li class="nav-item ms-2">
+            <form method="post" action="<c:url value='/auth/logout'/>" class="d-inline">
+              <button type="submit" class="btn btn-outline-secondary btn-sm">Logout</button>
+            </form>
+          </li>
+        </sec:authorize>
+      </ul>
+    </div>
+  </div>
+</nav>
