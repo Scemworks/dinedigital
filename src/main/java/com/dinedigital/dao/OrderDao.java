@@ -6,7 +6,6 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 
@@ -20,30 +19,29 @@ public class OrderDao {
         KeyHolder kh = new GeneratedKeyHolder();
         jdbcTemplate.update(con -> {
             // Use RETURN_GENERATED_KEYS for broader JDBC compatibility (H2, Postgres, etc.)
-            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement ps = con.prepareStatement(sql, new String[]{"ID"});
             if (tableNumber == null) ps.setNull(1, java.sql.Types.INTEGER); else ps.setInt(1, tableNumber);
             if (reservationId == null) ps.setNull(2, java.sql.Types.INTEGER); else ps.setInt(2, reservationId);
             return ps;
         }, kh);
-    // Prefer central Key value when available
-    var key = kh.getKey();
+    // Extract generated id safely from KeyHolder without calling getKey()
     long orderId = -1L;
-    if (key != null) orderId = key.longValue();
-        // Fallbacks: different drivers may return different key-map casing/keys
-        if (orderId == -1L && !kh.getKeyList().isEmpty()) {
-            var map = kh.getKeyList().get(0);
-            Object v;
-            if ((v = map.get("id")) instanceof Number) orderId = ((Number) v).longValue();
-            if ((v = map.get("ID")) instanceof Number) orderId = ((Number) v).longValue();
-            if ((v = map.get("generated_key")) instanceof Number) orderId = ((Number) v).longValue();
+    if (!kh.getKeyList().isEmpty()) {
+        var map = kh.getKeyList().get(0);
+        Object v;
+        if ((v = map.get("id")) instanceof Number) orderId = ((Number) v).longValue();
+        else if ((v = map.get("ID")) instanceof Number) orderId = ((Number) v).longValue();
+        else if ((v = map.get("generated_key")) instanceof Number) orderId = ((Number) v).longValue();
+        else {
             // try first numeric entry
             for (Object val : map.values()) {
                 if (val instanceof Number) { orderId = ((Number) val).longValue(); break; }
             }
         }
+    }
         if (orderId != -1L) {
             // Calculate and set order_number
-            Integer nextOrderNumber = jdbcTemplate.queryForObject("SELECT COALESCE(MAX(order_number), 0) + 1 FROM orders WHERE DATE(created_at) = CURRENT_DATE", Integer.class);
+            Integer nextOrderNumber = jdbcTemplate.queryForObject("SELECT COALESCE(MAX(order_number), 0) + 1 FROM orders WHERE CAST(created_at AS DATE) = CURRENT_DATE", Integer.class);
             jdbcTemplate.update("UPDATE orders SET order_number = ? WHERE id = ?", nextOrderNumber, orderId);
         }
         return orderId;
