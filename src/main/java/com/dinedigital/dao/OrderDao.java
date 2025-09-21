@@ -67,6 +67,18 @@ public class OrderDao {
         return jdbcTemplate.update("UPDATE orders SET status='PAID', paid_at=CURRENT_TIMESTAMP WHERE id=?", orderId);
     }
 
+    public int setStatus(long orderId, String status) {
+        return jdbcTemplate.update("UPDATE orders SET status=? WHERE id=?", status, orderId);
+    }
+
+    public int setStatusByReservation(long reservationId, String status) {
+        return jdbcTemplate.update("UPDATE orders SET status=? WHERE reservation_id=?", status, reservationId);
+    }
+
+    public java.util.List<Long> findOrderIdsByReservationAndStatus(long reservationId, String status) {
+        return jdbcTemplate.queryForList("SELECT id FROM orders WHERE reservation_id=? AND status=?", Long.class, reservationId, status);
+    }
+
     public java.util.Optional<java.util.Map<String,Object>> findOrder(long orderId){
         var list = jdbcTemplate.queryForList("SELECT id as real_id, order_number as order_id, table_number, reservation_id, status, created_at, paid_at FROM orders WHERE id=?", orderId);
         return list.stream().findFirst();

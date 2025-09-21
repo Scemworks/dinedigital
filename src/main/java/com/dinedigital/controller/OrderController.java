@@ -1,7 +1,10 @@
 package com.dinedigital.controller;
 
 import com.dinedigital.dao.OrderDao;
+import com.dinedigital.dao.ReservationDao;
 import org.springframework.stereotype.Controller;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ui.Model;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -15,7 +18,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/orders")
 public class OrderController {
     private final OrderDao orderDao;
-    public OrderController(OrderDao orderDao) { this.orderDao = orderDao; }
+    private final ReservationDao reservationDao;
+    private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
+    public OrderController(OrderDao orderDao, ReservationDao reservationDao) { this.orderDao = orderDao; this.reservationDao = reservationDao; }
 
     @GetMapping("/place")
     public String placeGetRedirect() {
@@ -66,46 +71,121 @@ public class OrderController {
         var ord = ordOpt.get();
         var items = orderDao.findOrderItems(orderId);
         java.math.BigDecimal total = items.stream()
-            .map(i -> ((java.math.BigDecimal) i.get("price")).multiply(new java.math.BigDecimal(((Number)i.get("quantity")).intValue())))
+            .map(i -> {
+                java.math.BigDecimal price = (java.math.BigDecimal) i.getOrDefault("price", java.math.BigDecimal.ZERO);
+                Number qn = (Number) i.getOrDefault("quantity", 0);
+                int q = qn == null ? 0 : qn.intValue();
+                return price.multiply(new java.math.BigDecimal(q));
+            })
             .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
 
         try (org.apache.pdfbox.pdmodel.PDDocument doc = new org.apache.pdfbox.pdmodel.PDDocument(); java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream()) {
             var page = new org.apache.pdfbox.pdmodel.PDPage(org.apache.pdfbox.pdmodel.common.PDRectangle.A4);
             doc.addPage(page);
             try (org.apache.pdfbox.pdmodel.PDPageContentStream cs = new org.apache.pdfbox.pdmodel.PDPageContentStream(doc, page)) {
-                float margin = 50;
+                float margin = 50f;
+                float pageWidth = page.getMediaBox().getWidth();
                 float y = page.getMediaBox().getHeight() - margin;
-                cs.setFont(org.apache.pdfbox.pdmodel.font.PDType1Font.HELVETICA_BOLD, 18);
-                cs.beginText(); cs.newLineAtOffset(margin, y); cs.showText("DineDigital - Order #" + ord.get("order_id")); cs.endText();
-                y -= 24;
-                cs.setFont(org.apache.pdfbox.pdmodel.font.PDType1Font.HELVETICA, 12);
-                cs.beginText(); cs.newLineAtOffset(margin, y); cs.showText("Thank you for ordering!"); cs.endText();
-                y -= 18;
-                y -= 10;
-                cs.setFont(org.apache.pdfbox.pdmodel.font.PDType1Font.HELVETICA_BOLD, 12);
-                cs.beginText(); cs.newLineAtOffset(margin, y); cs.showText("Item"); cs.endText();
-                cs.beginText(); cs.newLineAtOffset(320, y); cs.showText("Qty"); cs.endText();
-                cs.beginText(); cs.newLineAtOffset(360, y); cs.showText("Price"); cs.endText();
-                cs.beginText(); cs.newLineAtOffset(430, y); cs.showText("Amount"); cs.endText();
-                y -= 14; cs.setFont(org.apache.pdfbox.pdmodel.font.PDType1Font.HELVETICA, 12);
+                var bold = org.apache.pdfbox.pdmodel.font.PDType1Font.HELVETICA_BOLD;
+                var regular = org.apache.pdfbox.pdmodel.font.PDType1Font.HELVETICA;
+
+                // Header
+                cs.setFont(bold, 18);
+                cs.beginText(); cs.newLineAtOffset(margin, y); cs.showText("DineDigital"); cs.endText();
+
+                String heading = "Order #" + ord.get("order_id");
+                if (ord.get("reservation_id") != null) {
+                    try {
+                        long resId = ((Number) ord.get("reservation_id")).longValue();
+                        var resOpt = reservationDao.findById(resId);
+                        if (resOpt.isPresent()) heading = "Reservation " + resOpt.get().getConfirmationCode();
+                    } catch (Exception ignored) { }
+                }
+                cs.setFont(bold, 12);
+                cs.beginText(); cs.newLineAtOffset(pageWidth - margin - 220, y); cs.showText(heading); cs.endText();
+                y -= 26;
+
+                cs.setFont(regular, 11);
+                cs.beginText(); cs.newLineAtOffset(margin, y); cs.showText("Thank you for your reservation/order."); cs.endText();
+                y -= 16;
+
+                // Reservation details
+                if (ord.get("reservation_id") != null) {
+                    try {
+                        long resId = ((Number) ord.get("reservation_id")).longValue();
+                        var resOpt = reservationDao.findById(resId);
+                        if (resOpt.isPresent()) {
+                            var r = resOpt.get();
+                            cs.beginText(); cs.newLineAtOffset(margin, y); cs.showText("Guests: " + r.getGuests() + "    Reservation: " + r.getDate() + " " + r.getTime()); cs.endText();
+                            y -= 14;
+                        }
+                    } catch (Exception ignored) {}
+                }
+
+                y -= 6;
+
+                // Table header
+                cs.setFont(bold, 11);
+                float xItem = margin;
+                float xQty = margin + 300;
+                float xPrice = margin + 360;
+                float xAmt = margin + 440;
+                cs.beginText(); cs.newLineAtOffset(xItem, y); cs.showText("Item"); cs.endText();
+                cs.beginText(); cs.newLineAtOffset(xQty, y); cs.showText("Qty"); cs.endText();
+                cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText("Price"); cs.endText();
+                cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText("Amount"); cs.endText();
+                y -= 14;
+                cs.setFont(regular, 11);
+
+                java.math.BigDecimal subtotal = java.math.BigDecimal.ZERO;
                 for (java.util.Map<String,Object> it : items) {
-                    java.math.BigDecimal price = (java.math.BigDecimal) it.get("price");
-                    int qty = ((Number) it.get("quantity")).intValue();
+                    java.math.BigDecimal price = (java.math.BigDecimal) it.getOrDefault("price", java.math.BigDecimal.ZERO);
+                    Number qn = (Number) it.getOrDefault("quantity", 0);
+                    int qty = qn == null ? 0 : qn.intValue();
                     java.math.BigDecimal amt = price.multiply(new java.math.BigDecimal(qty));
-                    cs.beginText(); cs.newLineAtOffset(margin, y); cs.showText(String.valueOf(it.get("name"))); cs.endText();
-                    cs.beginText(); cs.newLineAtOffset(320, y); cs.showText(String.valueOf(qty)); cs.endText();
-                    cs.beginText(); cs.newLineAtOffset(360, y); cs.showText(String.valueOf(price)); cs.endText();
-                    cs.beginText(); cs.newLineAtOffset(430, y); cs.showText(String.valueOf(amt)); cs.endText();
+                    subtotal = subtotal.add(amt);
+
+                    String name = String.valueOf(it.getOrDefault("name", ""));
+                    try {
+                        cs.beginText(); cs.newLineAtOffset(xItem, y); cs.showText(name); cs.endText();
+                        cs.beginText(); cs.newLineAtOffset(xQty, y); cs.showText(String.valueOf(qty)); cs.endText();
+                        cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText(String.format("Rs %.2f", price)); cs.endText();
+                        cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("Rs %.2f", amt)); cs.endText();
+                    } catch (Exception e) {
+                        // log and continue rendering remaining items
+                        logger.warn("PDF rendering: failed to render item row (orderId={}) item={}", orderId, name, e);
+                    }
                     y -= 16;
                 }
+
+                java.math.BigDecimal reservationFee = java.math.BigDecimal.ZERO;
+                if (ord.get("reservation_id") != null) reservationFee = new java.math.BigDecimal("50.00");
+
                 y -= 10;
-                cs.setFont(org.apache.pdfbox.pdmodel.font.PDType1Font.HELVETICA_BOLD, 12);
-                cs.beginText(); cs.newLineAtOffset(360, y); cs.showText("Total:"); cs.endText();
-                cs.beginText(); cs.newLineAtOffset(430, y); cs.showText(String.valueOf(total)); cs.endText();
+                cs.setFont(bold, 11);
+                cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText("Subtotal:"); cs.endText();
+                cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("Rs %.2f", subtotal)); cs.endText();
+                y -= 14;
+                if (reservationFee.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                    cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText("Reservation Fee:"); cs.endText();
+                    cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("Rs %.2f", reservationFee)); cs.endText();
+                    y -= 14;
+                }
+                cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText("Total:"); cs.endText();
+                cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("Rs %.2f", subtotal.add(reservationFee))); cs.endText();
             }
             doc.save(baos);
+
+            String filename = "order-" + orderId + ".pdf";
+            if (ord.get("reservation_id") != null) {
+                try {
+                    long resId = ((Number) ord.get("reservation_id")).longValue();
+                    var resOpt = reservationDao.findById(resId);
+                    if (resOpt.isPresent()) filename = "reservation-" + resOpt.get().getConfirmationCode() + ".pdf";
+                } catch (Exception ignored) { }
+            }
             return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=order-"+orderId+".pdf")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(baos.toByteArray());
         }
