@@ -31,7 +31,21 @@ public class ReservationDao {
             ps.setString(6, r.getConfirmationCode());
             return ps;
         }, kh);
-        if (kh.getKey() != null) r.setId(kh.getKey().longValue());
+        // Extract generated id robustly when multiple generated keys are returned
+        long id = -1L;
+        if (!kh.getKeyList().isEmpty()) {
+            var map = kh.getKeyList().get(0);
+            Object v;
+            if ((v = map.get("id")) instanceof Number) id = ((Number) v).longValue();
+            else if ((v = map.get("ID")) instanceof Number) id = ((Number) v).longValue();
+            else if ((v = map.get("generated_key")) instanceof Number) id = ((Number) v).longValue();
+            else {
+                for (Object val : map.values()) {
+                    if (val instanceof Number) { id = ((Number) val).longValue(); break; }
+                }
+            }
+        }
+        if (id != -1L) r.setId(id);
         return r;
     }
 
@@ -77,5 +91,25 @@ public class ReservationDao {
     public int checkInByCode(String code) {
         return jdbcTemplate.update("UPDATE reservations SET checked_in = TRUE, check_in_time = CURRENT_TIMESTAMP WHERE confirmation_code = ?",
                 code);
+    }
+
+    public java.util.Optional<Reservation> findById(long id) {
+        var list = jdbcTemplate.query("SELECT id, name, email, date, time, guests, confirmation_code, created_at, checked_in, check_in_time FROM reservations WHERE id = ?",
+                new Object[]{id}, (rs, i) -> {
+                    Reservation r = new Reservation();
+                    r.setId(rs.getLong("id"));
+                    r.setName(rs.getString("name"));
+                    r.setEmail(rs.getString("email"));
+                    r.setDate(rs.getObject("date", java.time.LocalDate.class));
+                    r.setTime(rs.getObject("time", java.time.LocalTime.class));
+                    r.setGuests(rs.getInt("guests"));
+                    r.setConfirmationCode(rs.getString("confirmation_code"));
+                    r.setCreatedAt(rs.getObject("created_at", java.time.LocalDateTime.class));
+                    r.setCheckedIn(rs.getBoolean("checked_in"));
+                    var cit = rs.getTimestamp("check_in_time");
+                    r.setCheckInTime(cit == null ? null : cit.toLocalDateTime());
+                    return r;
+                });
+        return list.stream().findFirst();
     }
 }

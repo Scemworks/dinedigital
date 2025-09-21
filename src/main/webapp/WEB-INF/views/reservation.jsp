@@ -35,11 +35,11 @@
         <div class="mb-4">
             <div class="d-flex justify-content-between align-items-center">
                 <label for="guests-input" class="form-label mb-0">Number of Guests</label>
-                <div class="quantity-selector d-flex align-items-center">
-                    <button type="button" class="btn quantity-btn" id="guest-minus-btn">-</button>
-                    <span class="quantity-display" id="guest-count">1</span>
-                    <button type="button" class="btn quantity-btn" id="guest-plus-btn">+</button>
-                </div>
+        <div class="quantity-selector d-flex align-items-center">
+          <button type="button" class="btn quantity-btn" id="guest-minus-btn">-</button>
+          <span class="quantity-display" id="guest-count">1</span>
+          <button type="button" class="btn quantity-btn" id="guest-plus-btn">+</button>
+        </div>
             </div>
             <input type="hidden" id="guests-input" name="guests" value="1" required>
         </div>
@@ -101,6 +101,18 @@
   <%@ include file="/WEB-INF/views/includes/footer.jspf" %>
   <script>
     (function(){
+      // Guest +/- control
+      const guestMinus = document.getElementById('guest-minus-btn');
+      const guestPlus = document.getElementById('guest-plus-btn');
+      const guestDisplay = document.getElementById('guest-count');
+      const guestInput = document.getElementById('guests-input');
+      function setGuests(n){
+        if(n < 1) n = 1;
+        guestDisplay.textContent = n;
+        guestInput.value = n;
+      }
+      guestMinus.addEventListener('click', () => setGuests(parseInt(guestInput.value,10) - 1));
+      guestPlus.addEventListener('click', () => setGuests(parseInt(guestInput.value,10) + 1));
       const qtyInputs = document.querySelectorAll('.preorder-qty');
       const totalEl = document.getElementById('preorder-total-amount');
       const form = document.querySelector('form[action*="/reservation/confirm"]');

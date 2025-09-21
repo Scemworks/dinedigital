@@ -55,22 +55,47 @@ public class ReservationController {
         r.setGuests(guests);
     String code = ConfirmationCodeGenerator.generate(8);
     r.setConfirmationCode(code);
-        reservationDao.insert(r);
+    reservationDao.insert(r);
+    // Always expose reservation basics to the confirmation view
+    model.addAttribute("guests", r.getGuests());
+    model.addAttribute("reservationDate", r.getDate());
+    model.addAttribute("reservationTime", r.getTime());
 
         // If preorder arrays exist and have items, create an order linked to this reservation
         if (preorderNames != null && preorderQtys != null && preorderPrices != null &&
             preorderNames.length == preorderQtys.length && preorderQtys.length == preorderPrices.length) {
             long orderId = orderDao.createOrder(null, r.getId().intValue());
+            model.addAttribute("orderId", orderId);
             for (int i = 0; i < preorderNames.length; i++) {
                 if (preorderNames[i] == null || preorderNames[i].isBlank()) continue;
                 int qty = preorderQtys[i] != null ? preorderQtys[i] : 1;
                 java.math.BigDecimal price = preorderPrices[i] != null ? preorderPrices[i] : java.math.BigDecimal.ZERO;
                 orderDao.addItem(orderId, preorderNames[i], qty, price);
             }
+            // Mark as PREORDER so it does not show in active kitchen/billing until check-in or scheduled send
+            orderDao.setStatus(orderId, "PREORDER");
+            // compute preorder total and add reservation fee
+            var items = orderDao.findOrderItems(orderId);
+            java.math.BigDecimal subtotal = items.stream()
+                    .map(it -> ((java.math.BigDecimal) it.get("price")).multiply(new java.math.BigDecimal(((Number)it.get("quantity")).intValue())))
+                    .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+            java.math.BigDecimal fee = new java.math.BigDecimal("50.00");
+            java.math.BigDecimal total = subtotal.add(fee);
+            model.addAttribute("preorderSubtotal", subtotal);
+            model.addAttribute("reservationFee", fee);
+            model.addAttribute("preorderTotal", total);
+            model.addAttribute("preorderItems", items);
+            model.addAttribute("guests", r.getGuests());
+            // fetch order record to get daily order_number if available
+            var orderOpt = orderDao.findOrder(orderId);
+            if (orderOpt.isPresent()) {
+                var orderMap = orderOpt.get();
+                model.addAttribute("orderNumber", orderMap.get("order_id"));
+            }
         }
         model.addAttribute("name", name);
         model.addAttribute("email", email);
-    model.addAttribute("code", code);
+        model.addAttribute("code", code);
         return "confirmation";
     }
 }
