@@ -7,6 +7,9 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="<c:url value='/style.css?v=20250918'/>">
+<link rel="icon" type="image/png" href="<c:url value='/resources/logo.png'/>" sizes="32x32">
+<link rel="icon" type="image/png" href="<c:url value='/resources/logo.png'/>" sizes="192x192">
+<link rel="apple-touch-icon" href="<c:url value='/resources/logo.png'/>">
 <style>
   .quantity-selector { gap: 8px; }
   .quantity-btn {
@@ -61,4 +64,7 @@
   @media (max-width: 380px) {
     .auth-container { max-width: 94vw; }
   }
+
+  /* Brand logo */
+  .navbar-brand img { height: 28px; width: 28px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
 </style>
