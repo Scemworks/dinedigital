@@ -14,6 +14,7 @@ public class DataInitializer {
         return args -> {
             if (userDao.countAdmins() == 0) {
                 userDao.insert("admin", encoder.encode("admin123"), "ADMIN");
+                userDao.insert("kitchen", encoder.encode("kitchen123"), "KITCHEN");
             }
         };
     }
