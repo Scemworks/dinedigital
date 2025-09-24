@@ -55,6 +55,7 @@
         </form>
       </div>
       <hr/>
+      <div class="table-responsive">
       <table class="table">
         <thead><tr><th>Item</th><th class="text-end">Qty</th><th class="text-end">Price</th><th class="text-end">Amount</th></tr></thead>
         <tbody>
@@ -77,6 +78,7 @@
           <tr><th colspan="3" class="text-end">Total</th><th class="text-end">${total}</th></tr>
         </tfoot>
       </table>
+      </div>
     </div>
   </c:if>
 

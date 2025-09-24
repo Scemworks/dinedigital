@@ -55,7 +55,7 @@
                     <p class="mb-3"><strong>Ordered at:</strong> <c:out value="${order.createdAtStr}"/></p>
           <ul class="list-group list-group-flush flex-grow-1">
                       <c:forEach var="it" items="${order.items}">
-            <li class="list-group-item d-flex justify-content-between align-items-center">
+            <li class="list-group-item d-flex justify-content-between align-items-center kitchen-item">
                           <span>${it.name}</span>
                           <span class="badge bg-light text-dark">x${it.quantity}</span>
                         </li>

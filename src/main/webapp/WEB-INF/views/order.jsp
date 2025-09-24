@@ -59,7 +59,7 @@
               <div id="menuList" class="row g-3">
                 <c:forEach items="${items}" var="it" varStatus="st">
                   <div class="col-12">
-                    <div class="d-flex align-items-center justify-content-between border rounded p-2">
+                    <div class="d-flex align-items-center justify-content-between border rounded p-2 menu-item-row">
                       <div class="d-flex align-items-center" style="gap:12px;">
                         <c:if test="${not empty it.image}">
                           <img src="${it.image}" alt="${it.name}" style="height:48px;width:64px;object-fit:cover;border-radius:4px;"/>
@@ -69,7 +69,7 @@
                           <div class="text-muted small">${it.description}</div>
                         </div>
                       </div>
-                      <div class="d-flex align-items-center" style="gap:8px;">
+                      <div class="d-flex align-items-center menu-item-meta" style="gap:8px;">
                         <div class="fw-bold">₹ ${it.price}</div>
                         <input type="hidden" name="names" value="${it.name}"/>
                         <input type="hidden" name="prices" value="${it.price}"/>

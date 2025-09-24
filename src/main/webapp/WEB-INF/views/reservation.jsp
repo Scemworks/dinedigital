@@ -59,7 +59,7 @@
                       <div class="row g-3">
                         <c:forEach items="${items}" var="it">
                           <div class="col-12">
-                            <div class="d-flex align-items-center justify-content-between border rounded p-2">
+                            <div class="d-flex align-items-center justify-content-between border rounded p-2 menu-item-row">
                               <div class="d-flex align-items-center" style="gap:12px;">
                                 <c:if test="${not empty it.image}">
                                   <img src="${it.image}" alt="${it.name}" style="height:48px;width:64px;object-fit:cover;border-radius:4px;"/>
@@ -69,7 +69,7 @@
                                   <div class="text-muted small">${it.description}</div>
                                 </div>
                               </div>
-                              <div class="d-flex align-items-center" style="gap:8px;">
+                              <div class="d-flex align-items-center menu-item-meta" style="gap:8px;">
                                 <div class="fw-bold">₹ ${it.price}</div>
                                 <input type="hidden" name="preorderNames" value="${it.name}"/>
                                 <input type="hidden" name="preorderPrices" value="${it.price}"/>
@@ -106,6 +106,16 @@
   <%@ include file="/WEB-INF/views/includes/footer.jspf" %>
   <script>
     (function(){
+      // Disable past dates for reservation
+      const dateInput = document.getElementById('date');
+      try {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth()+1).padStart(2,'0');
+        const dd = String(today.getDate()).padStart(2,'0');
+        const minStr = `${yyyy}-${mm}-${dd}`;
+        dateInput.min = minStr;
+      } catch(e) {}
       // Guest +/- control
       const guestMinus = document.getElementById('guest-minus-btn');
       const guestPlus = document.getElementById('guest-plus-btn');
@@ -155,8 +165,22 @@
       });
       recalc();
 
-      // On submit, disable zero-qty rows so server ignores them
+      // On submit, validate date and disable zero-qty rows so server ignores them
       form.addEventListener('submit', (e) => {
+        // Prevent past date submissions
+        try {
+          const val = document.getElementById('date').value;
+          if (val) {
+            const picked = new Date(val + 'T00:00:00');
+            const now = new Date();
+            const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            if (picked < todayMidnight) {
+              e.preventDefault();
+              alert('Please choose today or a future date for your reservation.');
+              return;
+            }
+          }
+        } catch(err) {}
         qtyInputs.forEach(q => {
           const qty = parseInt(q.value || '0', 10);
           if(qty === 0){
