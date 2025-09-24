@@ -73,15 +73,23 @@ public class AdminController {
     }
 
     @PostMapping("/reservations/checkin")
-    public String checkIn(@RequestParam String code) {
+    public String checkIn(@RequestParam String code, @RequestParam(required = false) Integer tableNumber) {
         reservationDao.checkInByCode(code);
+        if (tableNumber != null && tableNumber > 0) {
+            try { reservationDao.setTableByCode(code, tableNumber); } catch (Exception ignored) {}
+        }
         // Promote any PREORDERs for this reservation to NEW so they appear in kitchen/billing
         try {
             var all = reservationDao.listAll();
             var match = all.stream().filter(r -> code.equals(r.getConfirmationCode())).findFirst();
             if (match.isPresent() && match.get().getId() != null) {
                 var ids = orderDao.findOrderIdsByReservationAndStatus(match.get().getId(), "PREORDER");
-                for (Long id : ids) orderDao.setStatus(id, "NEW");
+                for (Long id : ids) {
+                    orderDao.setStatus(id, "NEW");
+                    if (tableNumber != null && tableNumber > 0) {
+                        try { orderDao.updateTableNumber(id, tableNumber); } catch (Exception ignored) {}
+                    }
+                }
             }
         } catch (Exception ignored) { }
         return "redirect:/admin/reservations";

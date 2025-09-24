@@ -16,7 +16,8 @@ CREATE TABLE IF NOT EXISTS reservations (
   confirmation_code VARCHAR(20) NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   checked_in BOOLEAN NOT NULL DEFAULT FALSE,
-  check_in_time TIMESTAMP NULL
+  check_in_time TIMESTAMP NULL,
+  table_number INT NULL
 );
 
 -- Orders placed either during reservation (preorder) or in-restaurant

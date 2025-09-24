@@ -66,7 +66,7 @@ public class ReservationDao {
     }
 
     public List<Reservation> listAll() {
-        return jdbcTemplate.query("SELECT id, name, email, date, time, guests, confirmation_code, created_at, checked_in, check_in_time FROM reservations ORDER BY date DESC, time DESC",
+        return jdbcTemplate.query("SELECT id, name, email, date, time, guests, confirmation_code, created_at, checked_in, check_in_time, table_number FROM reservations ORDER BY date DESC, time DESC",
                 (rs, i) -> {
                     Reservation r = new Reservation();
                     r.setId(rs.getLong("id"));
@@ -80,6 +80,8 @@ public class ReservationDao {
                     r.setCheckedIn(rs.getBoolean("checked_in"));
                     var cit = rs.getTimestamp("check_in_time");
                     r.setCheckInTime(cit == null ? null : cit.toLocalDateTime());
+                    Object tn = rs.getObject("table_number");
+                    r.setTableNumber(tn == null ? null : ((Number) tn).intValue());
                     return r;
                 });
     }
@@ -94,7 +96,7 @@ public class ReservationDao {
     }
 
     public java.util.Optional<Reservation> findById(long id) {
-        var list = jdbcTemplate.query("SELECT id, name, email, date, time, guests, confirmation_code, created_at, checked_in, check_in_time FROM reservations WHERE id = ?",
+        var list = jdbcTemplate.query("SELECT id, name, email, date, time, guests, confirmation_code, created_at, checked_in, check_in_time, table_number FROM reservations WHERE id = ?",
                 new Object[]{id}, (rs, i) -> {
                     Reservation r = new Reservation();
                     r.setId(rs.getLong("id"));
@@ -108,8 +110,15 @@ public class ReservationDao {
                     r.setCheckedIn(rs.getBoolean("checked_in"));
                     var cit = rs.getTimestamp("check_in_time");
                     r.setCheckInTime(cit == null ? null : cit.toLocalDateTime());
+                    Object tn = rs.getObject("table_number");
+                    r.setTableNumber(tn == null ? null : ((Number) tn).intValue());
                     return r;
                 });
         return list.stream().findFirst();
+    }
+
+    public int setTableByCode(String code, Integer tableNumber) {
+        return jdbcTemplate.update("UPDATE reservations SET table_number = ? WHERE confirmation_code = ?",
+                tableNumber, code);
     }
 }

@@ -14,6 +14,7 @@ public class Reservation {
     private java.time.LocalDateTime createdAt;
     private boolean checkedIn;
     private java.time.LocalDateTime checkInTime;
+    private Integer tableNumber;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -44,4 +45,7 @@ public class Reservation {
 
     public java.time.LocalDateTime getCheckInTime() { return checkInTime; }
     public void setCheckInTime(java.time.LocalDateTime checkInTime) { this.checkInTime = checkInTime; }
+
+    public Integer getTableNumber() { return tableNumber; }
+    public void setTableNumber(Integer tableNumber) { this.tableNumber = tableNumber; }
 }

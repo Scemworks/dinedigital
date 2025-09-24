@@ -23,6 +23,10 @@
                     <input class="form-control" type="text" name="code" placeholder="ABC12345" required/>
                 </div>
                 <div class="col-auto">
+                    <label class="form-label">Assign Table</label>
+                    <input class="form-control" type="number" name="tableNumber" min="1" placeholder="e.g. 12" />
+                </div>
+                <div class="col-auto">
                     <button class="btn btn-primary" type="submit">Check In</button>
                 </div>
         </form>
@@ -30,7 +34,7 @@
     <table class="table table-dark table-striped table-bordered" style="margin-top:1rem;">
         <thead class="table-dark">
         <tr>
-            <th>ID</th><th>Name</th><th>Email</th><th>Date</th><th>Time</th><th>Guests</th><th>Code</th><th>Checked In</th>
+            <th>ID</th><th>Name</th><th>Email</th><th>Date</th><th>Time</th><th>Guests</th><th>Code</th><th>Checked In</th><th>Table</th>
         </tr>
         </thead>
         <tbody>
@@ -44,6 +48,7 @@
                 <td>${r.guests}</td>
                 <td>${r.confirmationCode}</td>
                 <td><c:choose><c:when test="${r.checkedIn}">Yes</c:when><c:otherwise>No</c:otherwise></c:choose></td>
+                <td><c:out value="${r.tableNumber != null ? r.tableNumber : '—'}"/></td>
             </tr>
         </c:forEach>
         </tbody>

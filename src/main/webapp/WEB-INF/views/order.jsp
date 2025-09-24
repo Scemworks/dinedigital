@@ -33,9 +33,11 @@
           <div class="card p-3">
             <h5>Scan Table QR</h5>
             <div id="qr-reader" style="width:100%"></div>
-            <div class="mt-2 d-flex align-items-center gap-2">
-              <button class="btn btn-sm btn-outline-primary" id="startScan">Start Camera</button>
-              <button class="btn btn-sm btn-outline-secondary" id="stopScan" disabled>Stop</button>
+            <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
+              <button class="btn btn-sm btn-outline-primary" id="startScan" type="button">Start Camera</button>
+              <button class="btn btn-sm btn-outline-secondary" id="stopScan" type="button" disabled>Stop</button>
+              <label class="btn btn-sm btn-outline-secondary mb-0" for="scanFile">Scan From Image</label>
+              <input type="file" id="scanFile" accept="image/*" class="d-none" capture="environment"/>
               <span class="text-muted small" id="scanStatus">Allow camera permission when asked.</span>
             </div>
             <div class="text-muted small mt-2">Tip: If camera access is blocked, allow permissions or use manual entry.</div>
@@ -115,6 +117,8 @@
         if(n > 0) {
           tableLabel.textContent = n;
           tableInput.value = n;
+          // reflect in manual input for visibility and quick edits
+          try { document.getElementById('manualTable').value = String(n); } catch(e) {}
           setCookie('DD_TABLE', String(n), 7);
           maybeEnablePlace();
         }
@@ -133,10 +137,11 @@
 
       applyBtn.addEventListener('click', () => updateTable(manual.value));
 
-      // QR parsing: expect URL with ?table=XX or just raw number
+      // QR parsing: expect absolute/relative URL with ?table=XX or just raw number
       function parseTableFromText(txt){
         try {
-          const url = new URL(txt);
+          // Support absolute or relative URLs by providing base
+          const url = new URL(txt, window.location.origin);
           const t = url.searchParams.get('table');
           return t || undefined;
         } catch(e) {
@@ -157,7 +162,12 @@
         try {
           scanStatus.textContent = 'Requesting camera permission...';
           const cams = await Html5Qrcode.getCameras();
-          const camId = cams && cams.length ? cams[0].id : undefined;
+          // Prefer back/environment camera on mobile; otherwise last camera
+          let camId;
+          if (cams && cams.length) {
+            const back = cams.find(c => /back|rear|environment/i.test(c.label||''));
+            camId = (back ? back.id : cams[cams.length-1].id);
+          }
           if (!camId) { scanStatus.textContent = 'No camera found.'; return; }
           await qr.start(camId, config, (decodedText) => {
             const t = parseTableFromText(decodedText);
@@ -181,13 +191,36 @@
       startBtn.addEventListener('click', startCamera);
       stopBtn.addEventListener('click', stopCamera);
 
+      // Stop camera when page hidden (saves battery, releases camera)
+      document.addEventListener('visibilitychange', () => { if (document.hidden) { stopCamera(); } });
+
+      // Scan still image fallback
+      document.getElementById('scanFile').addEventListener('change', async (ev) => {
+        const f = ev.target.files && ev.target.files[0];
+        if (!f) return;
+        scanStatus.textContent = 'Scanning image...';
+        try {
+          const result = await qr.scanFile(f, true);
+          const t = parseTableFromText(result);
+          if (t) updateTable(t);
+          scanStatus.textContent = 'Image scanned.';
+        } catch(e) {
+          scanStatus.textContent = 'Could not read QR from image.';
+        } finally {
+          ev.target.value = '';
+        }
+      });
+
   // Prefill from cookie or URL param
       (function initTable(){
         const params = new URLSearchParams(location.search);
         const tParam = params.get('table');
         if (tParam) { updateTable(tParam); return; }
         const cookieVal = getCookie('DD_TABLE');
-        if (cookieVal) { updateTable(cookieVal); }
+        if (cookieVal) { updateTable(cookieVal); return; }
+        // Fallback: some venues encode table directly as the path fragment /order/12
+        const m = location.pathname.match(/\/order\/(\d+)/);
+        if (m && m[1]) { updateTable(m[1]); }
       })();
 
       // form submit: convert zero-qty rows to not submit by clearing matching name/price
