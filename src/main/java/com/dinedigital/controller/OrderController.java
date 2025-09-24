@@ -74,14 +74,6 @@ public class OrderController {
         if (ordOpt.isEmpty()) return ResponseEntity.notFound().build();
         var ord = ordOpt.get();
         var items = orderDao.findOrderItems(orderId);
-        java.math.BigDecimal total = items.stream()
-            .map(i -> {
-                java.math.BigDecimal price = (java.math.BigDecimal) i.getOrDefault("price", java.math.BigDecimal.ZERO);
-                Number qn = (Number) i.getOrDefault("quantity", 0);
-                int q = qn == null ? 0 : qn.intValue();
-                return price.multiply(new java.math.BigDecimal(q));
-            })
-            .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
 
         try (org.apache.pdfbox.pdmodel.PDDocument doc = new org.apache.pdfbox.pdmodel.PDDocument(); java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream()) {
             var page = new org.apache.pdfbox.pdmodel.PDPage(org.apache.pdfbox.pdmodel.common.PDRectangle.A4);
