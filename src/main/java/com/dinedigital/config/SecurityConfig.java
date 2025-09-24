@@ -50,7 +50,7 @@ public class SecurityConfig {
             .requestMatchers("/order").permitAll()
             .requestMatchers("/orders/**").permitAll() // order placement + public receipt PDF
             // Auth & static
-            .requestMatchers("/style.css", "/login", "/auth/login").permitAll()
+            .requestMatchers("/style.css", "/login", "/auth/login", "/resources/**", "/favicon.ico", "/apple-touch-icon.png").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/kitchen", "/kitchen/**").hasAnyRole("ADMIN", "KITCHEN")
                         .anyRequest().authenticated()

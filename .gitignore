@@ -43,8 +43,8 @@ node_modules/
 # coverage
 coverage/
 
-# environment
-.env
+# environment (no local .env used)
+# .env removed — secrets are stored in properties or external vaults
 
 # compiled classes
 *.class

@@ -10,6 +10,7 @@
 <link rel="icon" type="image/png" href="<c:url value='/resources/logo.png'/>" sizes="32x32">
 <link rel="icon" type="image/png" href="<c:url value='/resources/logo.png'/>" sizes="192x192">
 <link rel="apple-touch-icon" href="<c:url value='/resources/logo.png'/>">
+<link rel="shortcut icon" href="<c:url value='/resources/logo.png'/>" />
 <style>
   .quantity-selector { gap: 8px; }
   .quantity-btn {

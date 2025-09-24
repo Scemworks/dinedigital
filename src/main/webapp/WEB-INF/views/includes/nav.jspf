@@ -3,9 +3,10 @@
 <nav class="navbar navbar-expand-md navbar-dark fixed-top" role="navigation" aria-label="Main navigation">
   <div class="container">
   <a class="navbar-brand d-flex align-items-center" href="<c:url value='/'/>">
-    <img src="<c:url value='/resources/logo.png'/>" alt="DineDigital"/>
-    <span>DineDigital</span>
+    <img src="<c:url value='/resources/logo.png'/>" alt="DineDigital Logo" class="me-2"/>
+    <span class="d-none d-md-inline">DineDigital</span>
   </a>
+  <!-- search removed per request -->
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
