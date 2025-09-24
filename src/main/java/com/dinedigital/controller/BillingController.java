@@ -23,31 +23,60 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
-import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
+ 
 
 @Controller
 @RequestMapping("/admin/billing")
 public class BillingController {
     private final OrderDao orderDao;
     private final ReservationDao reservationDao;
-    private final ResourceLoader resourceLoader;
-    public BillingController(OrderDao orderDao, ReservationDao reservationDao, ResourceLoader resourceLoader) { this.orderDao = orderDao; this.reservationDao = reservationDao; this.resourceLoader = resourceLoader; }
+    public BillingController(OrderDao orderDao, ReservationDao reservationDao) { this.orderDao = orderDao; this.reservationDao = reservationDao; }
 
     @GetMapping
-    public String billing(Model model) {
-        // Billing should show all unpaid orders, regardless of kitchen status
+    public String billing(@RequestParam(name = "orderId", required = false) Integer orderNumber,
+                          Model model) {
+        // If an order number is provided, show a focused billing view for that order
+        if (orderNumber != null && orderNumber > 0) {
+            var ordOpt = orderDao.findOrderByOrderNumber(orderNumber);
+            if (ordOpt.isEmpty()) {
+                model.addAttribute("notFound", true);
+            } else {
+                var ord = ordOpt.get();
+                model.addAttribute("order", ord);
+                var items = orderDao.findOrderItems(((Number) ord.get("real_id")).longValue());
+                model.addAttribute("items", items);
+                java.math.BigDecimal subtotal = java.math.BigDecimal.ZERO;
+                for (java.util.Map<String,Object> it : items) {
+                    java.math.BigDecimal price = (java.math.BigDecimal) it.get("price");
+                    int qty = ((Number) it.get("quantity")).intValue();
+                    subtotal = subtotal.add(price.multiply(new java.math.BigDecimal(qty)));
+                }
+                java.math.BigDecimal gst = subtotal.multiply(new java.math.BigDecimal("0.18")).setScale(2, java.math.RoundingMode.HALF_UP);
+                java.math.BigDecimal total = subtotal.add(gst);
+                if (ord.get("reservation_id") != null) {
+                    total = total.add(new java.math.BigDecimal("50.00"));
+                }
+                model.addAttribute("total", total);
+            }
+        }
+        // List all candidates for convenience
         model.addAttribute("orders", orderDao.listUnpaidForBilling());
         return "billing";
     }
 
     @GetMapping(path = "/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> billingPdf(@RequestParam Long orderId) throws Exception {
-        var ordOpt = orderDao.findOrder(orderId);
+        // Accept orderId as the displayed order number and resolve to real ID if needed
+        java.util.Optional<java.util.Map<String,Object>> ordOpt;
+        if (orderId < 1000000L) { // heuristic: small numbers are order_number, not PK
+            ordOpt = orderDao.findOrderByOrderNumber(orderId.intValue());
+        } else {
+            ordOpt = orderDao.findOrder(orderId);
+        }
         if (ordOpt.isEmpty()) return ResponseEntity.notFound().build();
         Map<String,Object> ord = ordOpt.get();
-        List<Map<String,Object>> items = orderDao.findOrderItems(orderId);
+        long realId = ((Number) ord.get("real_id")).longValue();
+        List<Map<String,Object>> items = orderDao.findOrderItems(realId);
         BigDecimal subtotal = items.stream()
                 .map(i -> ((BigDecimal) i.get("price")).multiply(new BigDecimal(((Number)i.get("quantity")).intValue())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -78,37 +107,8 @@ public class BillingController {
                 float margin = 50;
                 float y = page.getMediaBox().getHeight() - margin;
                 cs.setFont(PDType1Font.HELVETICA_BOLD, 18);
-                // Draw logo (if available) and title
-                boolean drewLogo = false;
-                try {
-                    byte[] bytes = null;
-                    String[] candidates = new String[]{
-                        "classpath:/static/logo.png",
-                        "classpath:/public/logo.png",
-                        "classpath:/resources/logo.png"
-                    };
-                    for (String loc : candidates) {
-                        Resource res = resourceLoader.getResource(loc);
-                        if (res.exists()) {
-                            try (java.io.InputStream is = res.getInputStream()) {
-                                bytes = is.readAllBytes();
-                            }
-                            break;
-                        }
-                    }
-                    if (bytes != null) {
-                        PDImageXObject logo = PDImageXObject.createFromByteArray(doc, bytes, "logo");
-                        float logoH = 28f;
-                        float scale = logoH / logo.getHeight();
-                        float logoW = logo.getWidth() * scale;
-                        cs.drawImage(logo, margin, y - logoH + 4, logoW, logoH);
-                        cs.beginText(); cs.newLineAtOffset(margin + logoW + 8, y); cs.showText("DineDigital - Order #" + ord.get("order_id")); cs.endText();
-                        drewLogo = true;
-                    }
-                } catch (Exception ignore) {}
-                if (!drewLogo) {
-                    cs.beginText(); cs.newLineAtOffset(margin, y); cs.showText("DineDigital - Order #" + ord.get("order_id")); cs.endText();
-                }
+                // Title without logo
+                cs.beginText(); cs.newLineAtOffset(margin, y); cs.showText("DineDigital - Order #" + ord.get("order_id")); cs.endText();
                 y -= 24;
                 cs.setFont(PDType1Font.HELVETICA, 12);
                 cs.beginText(); cs.newLineAtOffset(margin, y); cs.showText("Table: " + ord.get("table_number") + "    Date: " + ord.get("created_at")); cs.endText();
@@ -122,8 +122,8 @@ public class BillingController {
                 float xAmt = 480f;   // moved right to avoid overlap with labels
                 cs.beginText(); cs.newLineAtOffset(xItem, y); cs.showText("Item"); cs.endText();
                 cs.beginText(); cs.newLineAtOffset(xQty, y); cs.showText("Qty"); cs.endText();
-                cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText("Price (₹)"); cs.endText();
-                cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText("Amount (₹)"); cs.endText();
+                cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText("Price (INR)"); cs.endText();
+                cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText("Amount (INR)"); cs.endText();
                 y -= 14; cs.setFont(PDType1Font.HELVETICA, 12);
                 for (Map<String,Object> it : items) {
                     BigDecimal price = (BigDecimal) it.get("price");
@@ -131,32 +131,32 @@ public class BillingController {
                     BigDecimal amt = price.multiply(new BigDecimal(qty));
                     cs.beginText(); cs.newLineAtOffset(xItem, y); cs.showText(String.valueOf(it.get("name"))); cs.endText();
                     cs.beginText(); cs.newLineAtOffset(xQty, y); cs.showText(String.valueOf(qty)); cs.endText();
-                    cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText(String.format("₹ %.2f", price)); cs.endText();
-                    cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("₹ %.2f", amt)); cs.endText();
+                    cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText(String.format("INR %.2f", price)); cs.endText();
+                    cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("INR %.2f", amt)); cs.endText();
                     y -= 16;
                 }
                 y -= 10;
                 cs.setFont(PDType1Font.HELVETICA_BOLD, 12);
                 // Subtotals & taxes
                 cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText("Subtotal:"); cs.endText();
-                cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("₹ %.2f", subtotal)); cs.endText();
+                cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("INR %.2f", subtotal)); cs.endText();
                 y -= 14;
                 cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText("GST (18%):"); cs.endText();
-                cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("₹ %.2f", gstAmount)); cs.endText();
+                cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("INR %.2f", gstAmount)); cs.endText();
                 y -= 14;
                 if (reservationFee.compareTo(BigDecimal.ZERO) > 0) {
                     y -= 10;
                     cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText("Reservation Fee:"); cs.endText();
-                    cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("₹ %.2f", reservationFee)); cs.endText();
+                    cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("INR %.2f", reservationFee)); cs.endText();
                     total = total.add(reservationFee);
                 }
                 y -= 10;
                 cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText("Total:"); cs.endText();
-                cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("₹ %.2f", total)); cs.endText();
+                cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("INR %.2f", total)); cs.endText();
             }
             doc.save(baos);
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=order-"+orderId+".pdf")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=order-"+ord.get("order_id")+".pdf")
                     .contentType(MediaType.APPLICATION_PDF)
                     .body(baos.toByteArray());
         }
@@ -165,7 +165,13 @@ public class BillingController {
     @PostMapping("/paid")
     public String markPaid(@RequestParam Long orderId) {
         try {
-            orderDao.complete(orderId);
+            // Accept either displayed order number or real id
+            if (orderId < 1000000L) {
+                var ordOpt = orderDao.findOrderByOrderNumber(orderId.intValue());
+                ordOpt.ifPresent(o -> orderDao.complete(((Number)o.get("real_id")).longValue()));
+            } else {
+                orderDao.complete(orderId);
+            }
         } catch (Exception ignored) {
             // Swallow to keep UX simple; redirect will show generic success
         }

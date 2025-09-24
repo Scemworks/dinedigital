@@ -97,6 +97,15 @@ public class OrderDao {
         return list.stream().findFirst();
     }
 
+    public java.util.Optional<java.util.Map<String,Object>> findOrderByOrderNumber(int orderNumber){
+        // Order numbers are typically per-day; pick the most recent by created_at
+        var list = jdbcTemplate.queryForList(
+            "SELECT o.id as real_id, o.order_number as order_id, COALESCE(o.table_number, r.table_number) AS table_number, o.reservation_id, o.status, o.created_at, o.paid_at FROM orders o LEFT JOIN reservations r ON r.id = o.reservation_id WHERE o.order_number=? ORDER BY o.created_at DESC LIMIT 1",
+            orderNumber
+        );
+        return list.stream().findFirst();
+    }
+
     public java.util.List<java.util.Map<String,Object>> findOrderItems(long orderId){
         return jdbcTemplate.queryForList("SELECT name, quantity, price FROM order_items WHERE order_id=? ORDER BY id", orderId);
     }
