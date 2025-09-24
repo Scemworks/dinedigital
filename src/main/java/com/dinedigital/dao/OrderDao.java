@@ -54,7 +54,15 @@ public class OrderDao {
 
     public List<Map<String, Object>> listPendingOrders() {
         String sql = "SELECT o.id as real_id, o.order_number as order_id, o.table_number, o.reservation_id, o.status, o.created_at, o.paid_at " +
-                "FROM orders o WHERE o.status = 'NEW' ORDER BY o.created_at ASC";
+                "FROM orders o WHERE o.paid_at IS NULL AND o.status IN ('NEW','PREPARING','READY') ORDER BY o.created_at ASC";
+        return jdbcTemplate.queryForList(sql);
+    }
+
+    public List<Map<String, Object>> listUnpaidForBilling() {
+        String sql = "SELECT o.id as real_id, o.order_number as order_id, o.table_number, o.reservation_id, o.status, o.created_at, o.paid_at " +
+                "FROM orders o LEFT JOIN reservations r ON r.id = o.reservation_id " +
+                "WHERE o.paid_at IS NULL AND (o.reservation_id IS NULL OR r.checked_in = TRUE) " +
+                "ORDER BY o.created_at ASC";
         return jdbcTemplate.queryForList(sql);
     }
 

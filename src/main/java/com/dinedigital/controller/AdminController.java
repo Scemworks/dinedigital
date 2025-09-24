@@ -2,6 +2,7 @@ package com.dinedigital.controller;
 
 import com.dinedigital.dao.MenuDao;
 import com.dinedigital.dao.ReservationDao;
+import com.dinedigital.dao.OrderDao;
 import com.dinedigital.dao.UserDao;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,11 +17,13 @@ import java.math.BigDecimal;
 public class AdminController {
     private final MenuDao menuDao;
     private final ReservationDao reservationDao;
+    private final OrderDao orderDao;
     private final UserDao userDao;
     private final PasswordEncoder passwordEncoder;
-    public AdminController(MenuDao menuDao, ReservationDao reservationDao, UserDao userDao, PasswordEncoder passwordEncoder) {
+    public AdminController(MenuDao menuDao, ReservationDao reservationDao, OrderDao orderDao, UserDao userDao, PasswordEncoder passwordEncoder) {
         this.menuDao = menuDao;
         this.reservationDao = reservationDao;
+        this.orderDao = orderDao;
         this.userDao = userDao;
         this.passwordEncoder = passwordEncoder;
     }
@@ -72,6 +75,15 @@ public class AdminController {
     @PostMapping("/reservations/checkin")
     public String checkIn(@RequestParam String code) {
         reservationDao.checkInByCode(code);
+        // Promote any PREORDERs for this reservation to NEW so they appear in kitchen/billing
+        try {
+            var all = reservationDao.listAll();
+            var match = all.stream().filter(r -> code.equals(r.getConfirmationCode())).findFirst();
+            if (match.isPresent() && match.get().getId() != null) {
+                var ids = orderDao.findOrderIdsByReservationAndStatus(match.get().getId(), "PREORDER");
+                for (Long id : ids) orderDao.setStatus(id, "NEW");
+            }
+        } catch (Exception ignored) { }
         return "redirect:/admin/reservations";
     }
 

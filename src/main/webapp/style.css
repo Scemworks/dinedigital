@@ -54,9 +54,13 @@ h1, h2, h3, h4, h5, h6 {
 h1{font-size:clamp(1.8rem,2.5vw,2.6rem)}
 h2{font-size:clamp(1.5rem,2vw,2.2rem)}
 h3{font-size:clamp(1.25rem,1.6vw,1.6rem)}
+/* Force base text elements to white for readability */
+p, li, span, label, small, dt, dd, th, td { color: var(--text-color) }
 
 /* Ensure .fw-semibold is always white for readability */
 .fw-semibold { color: var(--text-color) !important; }
+/* Ensure bold text is visible on dark background */
+.fw-bold { color: var(--text-color) !important; }
 
 /* --- Navigation Bar --- */
 .navbar {
@@ -336,6 +340,15 @@ a:hover{color:var(--primary-accent-700)}
 .text-secondary, .text-body, .text-dark, .text-black-50,
 .text-body-secondary, .text-body-tertiary, .text-body-emphasis,
 .text-black, .text-body-black { color: var(--text-color) !important }
+
+/* Alerts on dark background */
+.alert { color: var(--text-color); border-color: var(--border-color) }
+.alert-secondary, .alert-light, .alert-white { background-color: var(--card-background); }
+.alert-primary { background-color: rgba(212,175,55,.12); color: var(--text-color) }
+
+/* Badges and pills */
+.badge { color: var(--text-color) }
+.badge.bg-light, .badge.bg-white { background-color: #2a2a2a !important; color: var(--text-color) !important }
 
 /* --- Responsive helpers --- */
 img { max-width: 100%; height: auto }

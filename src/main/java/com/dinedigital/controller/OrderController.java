@@ -48,7 +48,8 @@ public class OrderController {
         if (idx.isEmpty()) {
             return "redirect:/order?error=noItems";
         }
-        long orderId = orderDao.createOrder(tableNumber, 0);
+        // For walk-in orders, leave reservation_id NULL to avoid joining to a non-existent reservation
+        long orderId = orderDao.createOrder(tableNumber, null);
         for (Integer i : idx) {
             String nm = names.get(i);
             Integer q = qtys.get(i);

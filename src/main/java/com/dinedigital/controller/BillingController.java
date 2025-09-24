@@ -32,7 +32,8 @@ public class BillingController {
 
     @GetMapping
     public String billing(Model model) {
-        model.addAttribute("orders", orderDao.listPendingOrders());
+        // Billing should show all unpaid orders, regardless of kitchen status
+        model.addAttribute("orders", orderDao.listUnpaidForBilling());
         return "billing";
     }
 

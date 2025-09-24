@@ -52,7 +52,7 @@
                     </div>
                     <p class="mb-1"><strong>Table:</strong> <c:out value="${order.tableNumber != null ? order.tableNumber : '—'}"/></p>
                     <p class="mb-3"><strong>Reservation:</strong> <c:out value="${order.reservationId != null && order.reservationId > 0 ? order.reservationId : '—'}"/></p>
-                    <p class="mb-3"><strong>Ordered at:</strong> <fmt:formatDate value="${order.createdAt}" pattern="yyyy-MM-dd HH:mm"/></p>
+                    <p class="mb-3"><strong>Ordered at:</strong> <c:out value="${order.createdAtStr}"/></p>
           <ul class="list-group list-group-flush flex-grow-1">
                       <c:forEach var="it" items="${order.items}">
             <li class="list-group-item d-flex justify-content-between align-items-center">
