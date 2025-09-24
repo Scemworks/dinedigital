@@ -13,14 +13,17 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 
 @Controller
 @RequestMapping("/orders")
 public class OrderController {
     private final OrderDao orderDao;
     private final ReservationDao reservationDao;
+    private final ResourceLoader resourceLoader;
     private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
-    public OrderController(OrderDao orderDao, ReservationDao reservationDao) { this.orderDao = orderDao; this.reservationDao = reservationDao; }
+    public OrderController(OrderDao orderDao, ReservationDao reservationDao, ResourceLoader resourceLoader) { this.orderDao = orderDao; this.reservationDao = reservationDao; this.resourceLoader = resourceLoader; }
 
     @GetMapping("/place")
     public String placeGetRedirect() {
@@ -90,9 +93,34 @@ public class OrderController {
                 var bold = org.apache.pdfbox.pdmodel.font.PDType1Font.HELVETICA_BOLD;
                 var regular = org.apache.pdfbox.pdmodel.font.PDType1Font.HELVETICA;
 
-                // Header
+                // Header with logo if available
                 cs.setFont(bold, 18);
-                cs.beginText(); cs.newLineAtOffset(margin, y); cs.showText("DineDigital"); cs.endText();
+                boolean drewLogo = false;
+                try {
+                    byte[] bytes = null;
+                    String[] candidates = new String[]{
+                        "classpath:/static/logo.png",
+                        "classpath:/public/logo.png",
+                        "classpath:/resources/logo.png"
+                    };
+                    for (String loc : candidates) {
+                        Resource res = resourceLoader.getResource(loc);
+                        if (res.exists()) {
+                            try (java.io.InputStream is = res.getInputStream()) { bytes = is.readAllBytes(); }
+                            break;
+                        }
+                    }
+                    if (bytes != null) {
+                        var logo = org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject.createFromByteArray(doc, bytes, "logo");
+                        float logoH = 28f;
+                        float scale = logoH / logo.getHeight();
+                        float logoW = logo.getWidth() * scale;
+                        cs.drawImage(logo, margin, y - logoH + 4, logoW, logoH);
+                        cs.beginText(); cs.newLineAtOffset(margin + logoW + 8, y); cs.showText("DineDigital"); cs.endText();
+                        drewLogo = true;
+                    }
+                } catch (Exception ignore) {}
+                if (!drewLogo) { cs.beginText(); cs.newLineAtOffset(margin, y); cs.showText("DineDigital"); cs.endText(); }
 
                 String heading = "Order #" + ord.get("order_id");
                 if (ord.get("reservation_id") != null) {
@@ -133,8 +161,8 @@ public class OrderController {
                 float xAmt = margin + 440;
                 cs.beginText(); cs.newLineAtOffset(xItem, y); cs.showText("Item"); cs.endText();
                 cs.beginText(); cs.newLineAtOffset(xQty, y); cs.showText("Qty"); cs.endText();
-                cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText("Price"); cs.endText();
-                cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText("Amount"); cs.endText();
+                cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText("Price (₹)"); cs.endText();
+                cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText("Amount (₹)"); cs.endText();
                 y -= 14;
                 cs.setFont(regular, 11);
 
@@ -150,8 +178,8 @@ public class OrderController {
                     try {
                         cs.beginText(); cs.newLineAtOffset(xItem, y); cs.showText(name); cs.endText();
                         cs.beginText(); cs.newLineAtOffset(xQty, y); cs.showText(String.valueOf(qty)); cs.endText();
-                        cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText(String.format("Rs %.2f", price)); cs.endText();
-                        cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("Rs %.2f", amt)); cs.endText();
+                        cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText(String.format("₹ %.2f", price)); cs.endText();
+                        cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("₹ %.2f", amt)); cs.endText();
                     } catch (Exception e) {
                         // log and continue rendering remaining items
                         logger.warn("PDF rendering: failed to render item row (orderId={}) item={}", orderId, name, e);
@@ -161,19 +189,23 @@ public class OrderController {
 
                 java.math.BigDecimal reservationFee = java.math.BigDecimal.ZERO;
                 if (ord.get("reservation_id") != null) reservationFee = new java.math.BigDecimal("50.00");
-
+                java.math.BigDecimal gst = subtotal.multiply(new java.math.BigDecimal("0.18")).setScale(2, java.math.RoundingMode.HALF_UP);
+                java.math.BigDecimal total = subtotal.add(gst).add(reservationFee);
                 y -= 10;
                 cs.setFont(bold, 11);
                 cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText("Subtotal:"); cs.endText();
-                cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("Rs %.2f", subtotal)); cs.endText();
+                cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("₹ %.2f", subtotal)); cs.endText();
+                y -= 14;
+                cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText("GST (18%):"); cs.endText();
+                cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("₹ %.2f", gst)); cs.endText();
                 y -= 14;
                 if (reservationFee.compareTo(java.math.BigDecimal.ZERO) > 0) {
                     cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText("Reservation Fee:"); cs.endText();
-                    cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("Rs %.2f", reservationFee)); cs.endText();
+                    cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("₹ %.2f", reservationFee)); cs.endText();
                     y -= 14;
                 }
                 cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText("Total:"); cs.endText();
-                cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("Rs %.2f", subtotal.add(reservationFee))); cs.endText();
+                cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("₹ %.2f", total)); cs.endText();
             }
             doc.save(baos);
 
