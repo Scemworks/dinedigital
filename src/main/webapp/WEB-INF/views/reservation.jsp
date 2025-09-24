@@ -73,7 +73,12 @@
                                 <div class="fw-bold">₹ ${it.price}</div>
                                 <input type="hidden" name="preorderNames" value="${it.name}"/>
                                 <input type="hidden" name="preorderPrices" value="${it.price}"/>
-                                <input type="number" name="preorderQtys" class="form-control preorder-qty" value="0" min="0" style="width:80px"/>
+                                <div class="quantity-selector d-flex align-items-center">
+                                  <button type="button" class="btn quantity-btn preorder-minus">-</button>
+                                  <span class="quantity-display preorder-count">0</span>
+                                  <button type="button" class="btn quantity-btn preorder-plus">+</button>
+                                  <input type="hidden" name="preorderQtys" class="preorder-qty" value="0"/>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -133,6 +138,21 @@
         }
       }
       qtyInputs.forEach(i => i.addEventListener('input', recalc));
+      // Wire +/- controls for preorder items
+      document.querySelectorAll('#preorder-menu-items .quantity-selector').forEach(qs => {
+        const minus = qs.querySelector('.preorder-minus');
+        const plus = qs.querySelector('.preorder-plus');
+        const display = qs.querySelector('.preorder-count');
+        const hiddenQty = qs.querySelector('.preorder-qty');
+        function setQty(n){
+          if(n < 0) n = 0;
+          display.textContent = String(n);
+          hiddenQty.value = String(n);
+          recalc();
+        }
+        minus.addEventListener('click', () => setQty(parseInt(hiddenQty.value||'0',10) - 1));
+        plus.addEventListener('click', () => setQty(parseInt(hiddenQty.value||'0',10) + 1));
+      });
       recalc();
 
       // On submit, disable zero-qty rows so server ignores them

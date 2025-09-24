@@ -73,7 +73,12 @@
                         <div class="fw-bold">₹ ${it.price}</div>
                         <input type="hidden" name="names" value="${it.name}"/>
                         <input type="hidden" name="prices" value="${it.price}"/>
-                        <input type="number" name="qtys" class="form-control" value="0" min="0" style="width:80px"/>
+                        <div class="quantity-selector d-flex align-items-center">
+                          <button type="button" class="btn quantity-btn item-minus">-</button>
+                          <span class="quantity-display item-count">0</span>
+                          <button type="button" class="btn quantity-btn item-plus">+</button>
+                          <input type="hidden" name="qtys" class="item-qty" value="0"/>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -131,8 +136,20 @@
         placeBtn.disabled = !(tableInput.value && anyQty);
       }
 
-      document.querySelectorAll('input[name="qtys"]').forEach(el => {
-        el.addEventListener('input', maybeEnablePlace);
+      // Wire +/- buttons for each item
+      orderForm.querySelectorAll('.quantity-selector').forEach(qs => {
+        const minus = qs.querySelector('.item-minus');
+        const plus = qs.querySelector('.item-plus');
+        const display = qs.querySelector('.item-count');
+        const hiddenQty = qs.querySelector('.item-qty');
+        function setQty(n){
+          if(n < 0) n = 0;
+          display.textContent = String(n);
+          hiddenQty.value = String(n);
+          maybeEnablePlace();
+        }
+        minus.addEventListener('click', () => setQty(parseInt(hiddenQty.value||'0',10) - 1));
+        plus.addEventListener('click', () => setQty(parseInt(hiddenQty.value||'0',10) + 1));
       });
 
       applyBtn.addEventListener('click', () => updateTable(manual.value));
