@@ -11,25 +11,28 @@
   <%@ include file="/WEB-INF/views/includes/nav.jspf" %>
   <main class="content-wrap content-section">
     <div class="container">
-      <h2 class="text-center mb-5">Reserve Your Table</h2>
+      <h2 class="text-center mb-3">Reserve Your Table</h2>
+      <c:if test="${not empty error}">
+        <div class="alert alert-warning">${error}</div>
+      </c:if>
       <form class="mx-auto" style="max-width: 700px;" action="<c:url value='/reservation/confirm'/>" method="post">
         <h4 class="mb-4">Your Details</h4>
         <div class="mb-4">
           <label for="name" class="form-label">Full Name</label>
-          <input type="text" class="form-control" id="name" name="name" placeholder="Enter your full name" required>
+          <input type="text" class="form-control" id="name" name="name" placeholder="Enter your full name" value="${name}" required>
         </div>
         <div class="mb-4">
           <label for="email" class="form-label">Email Address</label>
-          <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+          <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" value="${email}" required>
         </div>
         <div class="row">
           <div class="col-md-6 mb-4">
             <label for="date" class="form-label">Date</label>
-            <input type="date" class="form-control" id="date" name="date" required>
+            <input type="date" class="form-control" id="date" name="date" value="${date}" required>
           </div>
           <div class="col-md-6 mb-4">
             <label for="time" class="form-label">Time</label>
-            <input type="time" class="form-control" id="time" name="time" required>
+            <input type="time" class="form-control" id="time" name="time" value="${time}" required>
           </div>
         </div>
         <div class="mb-4">
@@ -106,7 +109,7 @@
   <%@ include file="/WEB-INF/views/includes/footer.jspf" %>
   <script>
     (function(){
-      // Disable past dates for reservation
+      // Disable past dates for reservation and limit to next 30 days
       const dateInput = document.getElementById('date');
       try {
         const today = new Date();
@@ -115,7 +118,35 @@
         const dd = String(today.getDate()).padStart(2,'0');
         const minStr = `${yyyy}-${mm}-${dd}`;
         dateInput.min = minStr;
+        const max = new Date(today.getTime() + 30*24*60*60*1000);
+        const yyyy2 = max.getFullYear();
+        const mm2 = String(max.getMonth()+1).padStart(2,'0');
+        const dd2 = String(max.getDate()).padStart(2,'0');
+        dateInput.max = `${yyyy2}-${mm2}-${dd2}`;
       } catch(e) {}
+
+      // For same-day, set min time to 1 hour from now (rounded to next 5 minutes)
+      const timeInput = document.getElementById('time');
+      function updateMinTime(){
+        try {
+          if (!dateInput.value) { timeInput.removeAttribute('min'); return; }
+          const picked = new Date(dateInput.value + 'T00:00:00');
+          const now = new Date();
+          const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          if (picked.getTime() === todayMidnight.getTime()) {
+            const oneHourLater = new Date(now.getTime() + 60*60000);
+            const mins = oneHourLater.getMinutes();
+            const rounded = new Date(oneHourLater.getTime() + ((5 - (mins % 5)) % 5) * 60000);
+            const hh = String(rounded.getHours()).padStart(2,'0');
+            const mm2 = String(rounded.getMinutes()).padStart(2,'0');
+            timeInput.min = `${hh}:${mm2}`;
+          } else {
+            timeInput.removeAttribute('min');
+          }
+        } catch(e) {}
+      }
+      dateInput.addEventListener('change', updateMinTime);
+      updateMinTime();
       // Guest +/- control
       const guestMinus = document.getElementById('guest-minus-btn');
       const guestPlus = document.getElementById('guest-plus-btn');
@@ -178,6 +209,26 @@
               e.preventDefault();
               alert('Please choose today or a future date for your reservation.');
               return;
+            }
+          }
+        } catch(err) {}
+        // Prevent past time for same-day reservations
+        try {
+          const dVal = dateInput.value;
+          const tVal = timeInput.value;
+          if (dVal && tVal) {
+            const now = new Date();
+            const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const pickedDate = new Date(dVal + 'T00:00:00');
+            if (pickedDate.getTime() === todayMidnight.getTime()) {
+              const [hh, mm] = tVal.split(':').map(x => parseInt(x, 10));
+              const pickedTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh||0, mm||0, 0, 0);
+              const minAllowed = new Date(now.getTime() + 60*60000);
+              if (pickedTime < minAllowed) {
+                e.preventDefault();
+                alert('Please choose a time at least 1 hour from now.');
+                return;
+              }
             }
           }
         } catch(err) {}

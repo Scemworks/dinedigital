@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import com.dinedigital.util.ConfirmationCodeGenerator;
 import com.dinedigital.dao.OrderDao;
 
@@ -47,11 +48,101 @@ public class ReservationController {
     // housekeeping: delete past reservations
     reservationDao.deleteOlderThanToday();
 
+        // Server-side validation: prevent past dates
+        LocalDate chosenDate;
+        try {
+            chosenDate = LocalDate.parse(date);
+        } catch (Exception ex) {
+            model.addAttribute("error", "Invalid date. Please choose a valid reservation date.");
+            model.addAttribute("items", menuDao.findAll());
+            model.addAttribute("name", name);
+            model.addAttribute("email", email);
+            model.addAttribute("date", date);
+            model.addAttribute("time", time);
+            model.addAttribute("guests", guests);
+            return "reservation";
+        }
+        if (chosenDate.isBefore(LocalDate.now())) {
+            model.addAttribute("error", "Please choose today or a future date for your reservation.");
+            model.addAttribute("items", menuDao.findAll());
+            model.addAttribute("name", name);
+            model.addAttribute("email", email);
+            model.addAttribute("date", date);
+            model.addAttribute("time", time);
+            model.addAttribute("guests", guests);
+            return "reservation";
+        }
+
+        // Max booking window: 30 days ahead
+        LocalDate maxAllowedDate = LocalDate.now().plusDays(30);
+        if (chosenDate.isAfter(maxAllowedDate)) {
+            model.addAttribute("error", "Please choose a date within the next 30 days.");
+            model.addAttribute("items", menuDao.findAll());
+            model.addAttribute("name", name);
+            model.addAttribute("email", email);
+            model.addAttribute("date", date);
+            model.addAttribute("time", time);
+            model.addAttribute("guests", guests);
+            return "reservation";
+        }
+
+        // Parse and validate time; for same-day reservations ensure time is not in the past
+        LocalTime chosenTime;
+        try {
+            chosenTime = LocalTime.parse(time);
+        } catch (Exception ex) {
+            model.addAttribute("error", "Invalid time. Please choose a valid reservation time.");
+            model.addAttribute("items", menuDao.findAll());
+            model.addAttribute("name", name);
+            model.addAttribute("email", email);
+            model.addAttribute("date", date);
+            model.addAttribute("time", time);
+            model.addAttribute("guests", guests);
+            return "reservation";
+        }
+        // Latest time cutoff: no bookings after 22:00 (10 PM)
+        LocalTime lastBookableTime = LocalTime.of(22, 0);
+        if (chosenTime.isAfter(lastBookableTime)) {
+            model.addAttribute("error", "Please choose a time no later than 10:00 PM.");
+            model.addAttribute("items", menuDao.findAll());
+            model.addAttribute("name", name);
+            model.addAttribute("email", email);
+            model.addAttribute("date", date);
+            model.addAttribute("time", time);
+            model.addAttribute("guests", guests);
+            return "reservation";
+        }
+
+        if (chosenDate.isEqual(LocalDate.now())) {
+            LocalTime minAllowed = LocalTime.now().plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.MINUTES);
+            if (chosenTime.isBefore(minAllowed)) {
+                model.addAttribute("error", "Please choose a time at least 1 hour from now.");
+                model.addAttribute("items", menuDao.findAll());
+                model.addAttribute("name", name);
+                model.addAttribute("email", email);
+                model.addAttribute("date", date);
+                model.addAttribute("time", time);
+                model.addAttribute("guests", guests);
+                return "reservation";
+            }
+            // If no slots remain today
+            if (minAllowed.isAfter(lastBookableTime)) {
+                model.addAttribute("error", "No available times remain today. Please choose a future date.");
+                model.addAttribute("items", menuDao.findAll());
+                model.addAttribute("name", name);
+                model.addAttribute("email", email);
+                model.addAttribute("date", date);
+                model.addAttribute("time", time);
+                model.addAttribute("guests", guests);
+                return "reservation";
+            }
+        }
+
         Reservation r = new Reservation();
         r.setName(name);
         r.setEmail(email);
-        r.setDate(LocalDate.parse(date));
-        r.setTime(LocalTime.parse(time));
+        r.setDate(chosenDate);
+        r.setTime(chosenTime);
         r.setGuests(guests);
     String code = ConfirmationCodeGenerator.generate(8);
     r.setConfirmationCode(code);
