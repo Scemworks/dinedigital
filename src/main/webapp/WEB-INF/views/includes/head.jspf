@@ -40,4 +40,25 @@
     .kitchen-item { flex-wrap: wrap; }
     .kitchen-item .badge { margin-left: auto; }
   }
+
+  /* Buttons that should become full-width on phones */
+  .btn-mobile { width: auto; }
+  @media (max-width: 576px) {
+    .btn-mobile { width: 100%; }
+  }
+
+  /* Compact card padding for very small screens (e.g., login) */
+  @media (max-width: 420px) {
+    .login-card { padding: 1rem !important; }
+  }
+
+  /* Auth container sizing and safe area */
+  .auth-container { max-width: 480px; }
+  .safe-top { padding-top: env(safe-area-inset-top, 0); }
+  @supports (padding: max(0px)) {
+    .safe-top { padding-top: max(12px, env(safe-area-inset-top)); }
+  }
+  @media (max-width: 380px) {
+    .auth-container { max-width: 94vw; }
+  }
 </style>

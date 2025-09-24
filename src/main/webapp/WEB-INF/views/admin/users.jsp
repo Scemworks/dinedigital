@@ -16,6 +16,7 @@
             </ol>
         </nav>
         <h1 class="accent-heading">Users</h1>
+    <div class="table-responsive">
     <table class="table table-dark table-striped table-bordered align-middle">
         <thead class="table-dark">
         <tr><th>ID</th><th>Username</th><th>Role</th><th>Actions</th></tr>
@@ -36,6 +37,7 @@
         </c:forEach>
         </tbody>
     </table>
+    </div>
 
     <h2 class="mt-4 accent-heading">Add User</h2>
     <form class="card card-accent-top p-3" method="post" action="<c:url value='/admin/users/add'/>">

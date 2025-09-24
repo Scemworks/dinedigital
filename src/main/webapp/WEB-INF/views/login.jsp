@@ -9,8 +9,8 @@
 <body class="page-wrapper">
 <%@ include file="/WEB-INF/views/includes/nav.jspf" %>
 <main class="content-wrap content-section">
-<div class="container" style="max-width: 480px;">
-  <div class="card p-4">
+<div class="container auth-container safe-top" style="max-width: 480px;">
+  <div class="card p-4 login-card">
     <c:set var="type" value="${param.type}"/>
     <h2>
         <c:choose>

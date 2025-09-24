@@ -32,11 +32,11 @@
                 <p class="mb-1"><strong>Reservation:</strong> <c:out value="${order.reservation_id != null && order.reservation_id > 0 ? order.reservation_id : '—'}"/></p>
                 <p class="mb-1"><strong>Status:</strong> ${order.status}</p>
                 <p class="mb-3"><strong>Date:</strong> <fmt:formatDate value="${order.created_at}" pattern="yyyy-MM-dd HH:mm"/></p>
-                <div class="mt-auto">
-                  <a class="btn btn-outline-primary btn-sm" href="<c:url value='/admin/billing/pdf'><c:param name='orderId' value='${order.real_id}'/></c:url>">Download PDF</a>
-                  <form method="post" action="<c:url value='/admin/billing/paid'/>" class="d-inline ms-2">
+                <div class="mt-auto d-flex flex-wrap gap-2">
+                  <a class="btn btn-outline-primary btn-sm btn-mobile" href="<c:url value='/admin/billing/pdf'><c:param name='orderId' value='${order.real_id}'/></c:url>">Download PDF</a>
+                  <form method="post" action="<c:url value='/admin/billing/paid'/>" class="d-inline">
                     <input type="hidden" name="orderId" value="${order.real_id}"/>
-                    <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Mark order as paid? This will remove it.');">Mark as Paid</button>
+                    <button type="submit" class="btn btn-success btn-sm btn-mobile" onclick="return confirm('Mark order as paid? This will remove it.');">Mark as Paid</button>
                   </form>
                 </div>
               </div>

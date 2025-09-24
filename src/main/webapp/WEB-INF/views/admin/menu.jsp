@@ -16,6 +16,7 @@
             </ol>
         </nav>
         <h1 class="accent-heading">Menu</h1>
+    <div class="table-responsive">
     <table class="table table-dark table-striped table-bordered align-middle">
         <thead class="table-dark">
         <tr><th>ID</th><th>Name</th><th>Description</th><th>Price</th><th>Image</th><th style="width:160px">Actions</th></tr>
@@ -44,6 +45,7 @@
         </c:forEach>
         </tbody>
     </table>
+    </div>
 
     <h2 class="mt-4 accent-heading">Add Item</h2>
     <form class="card card-accent-top p-3" method="post" action="<c:url value='/admin/menu/add'/>">

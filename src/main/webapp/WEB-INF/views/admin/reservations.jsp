@@ -31,7 +31,8 @@
                 </div>
         </form>
 
-    <table class="table table-dark table-striped table-bordered" style="margin-top:1rem;">
+    <div class="table-responsive" style="margin-top:1rem;">
+    <table class="table table-dark table-striped table-bordered">
         <thead class="table-dark">
         <tr>
             <th>ID</th><th>Name</th><th>Email</th><th>Date</th><th>Time</th><th>Guests</th><th>Code</th><th>Checked In</th><th>Table</th>
@@ -53,6 +54,7 @@
         </c:forEach>
         </tbody>
     </table>
+    </div>
     <p class="mt-3"><a class="btn btn-outline-secondary" href="<c:url value='/admin'/>">Back</a></p>
 </div>
 </main>
