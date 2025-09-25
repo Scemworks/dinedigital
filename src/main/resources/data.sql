@@ -10,7 +10,7 @@ INSERT INTO menu(name, description, price, image) VALUES
 ('Appam and Vegetable Stew','Soft appams served with lightly spiced coconut milk vegetable stew.',160.00,'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgRjWMXQNDdzxQYhPF__uIidHNeAVI8zJzD60GmhzCQMK2eOUp_IymMSuJvrkmalOuScxOrrVW7piqTXO1B-2gi6riFQFGWcuTfN6g7pWONaDPqVXa6MCAo9L3PEj4HzAhw4cxLzqzhbsgT/s1600/Kerala+vegetable+stew+recipe....jpg'),
 ('Kerala Beef Fry','Peppery, dry-roasted beef with coconut slivers and curry leaves.',150.00,'https://i.pinimg.com/736x/15/76/cc/1576cc178d1bd79f7caa005d2b838436.jpg');
 
--- Seed default kitchen user (username: kitchen / password: kitchen123) for dev profile
+-- Seed default users (username: admin / password: admin123) and (username: kitchen / password: kitchen123)
 INSERT INTO users(username, password_hash, role)
 VALUES ('admin', '$2a$12$JHmd7moCS40VjD6iwepP/eD5n4w5d9YLWERw4uzah8Ws.gJJHTgfy', 'ADMIN'),
        ('kitchen', '$2a$12$v7KWpfxbg38fIOyO70Z12.25FA8q0qKHWhglvGcbO2XIQ3ZPjObUu', 'KITCHEN');

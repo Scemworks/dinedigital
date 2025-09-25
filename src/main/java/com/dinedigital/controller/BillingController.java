@@ -145,10 +145,9 @@ public class BillingController {
                 cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("INR %.2f", gstAmount)); cs.endText();
                 y -= 14;
                 if (reservationFee.compareTo(BigDecimal.ZERO) > 0) {
-                    y -= 10;
                     cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText("Reservation Fee:"); cs.endText();
                     cs.beginText(); cs.newLineAtOffset(xAmt, y); cs.showText(String.format("INR %.2f", reservationFee)); cs.endText();
-                    total = total.add(reservationFee);
+                    y -= 14;
                 }
                 y -= 10;
                 cs.beginText(); cs.newLineAtOffset(xPrice, y); cs.showText("Total:"); cs.endText();
